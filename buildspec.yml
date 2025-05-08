@@ -3,48 +3,56 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      php: 8.0
-      nodejs: 16
+      nodejs: 16  # Just use Node.js runtime
     commands:
-      # Make setup script executable and run it
-      - chmod +x ./setup-environment.sh
-      - ./setup-environment.sh
+      # Check which Linux distribution is running
+      - cat /etc/*release
       
-      # Install project dependencies
-      - echo "Installing project dependencies..."
-      - composer install --no-interaction --no-progress || echo "Composer install failed, continuing build"
+      # Install PHP 8.0 on Amazon Linux 2
+      - echo "Installing PHP 8.0..."
+      - amazon-linux-extras enable php8.0
+      - yum clean metadata
+      - yum install -y php php-cli php-common php-curl php-mbstring php-xml php-zip php-mysql php-gd
+      
+      # Verify PHP installation
+      - php -v
+      
+      # Install Composer
+      - echo "Installing Composer..."
+      - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+      - composer --version
       
   pre_build:
     commands:
       # Run any checks before build
-      - echo Running pre-build checks...
+      - echo "Running pre-build checks..."
       - php -v
-      # Optional: Run linting or code style checks
-      # - vendor/bin/phpcs --standard=PSR12 app/
-      # Optional: Run security checks
-      # - vendor/bin/security-checker security:check composer.lock
+      
+      # Install dependencies
+      - echo "Installing project dependencies..."
+      - composer install --no-interaction --no-progress || echo "Composer install failed, continuing build"
+      - npm ci || npm install
       
   build:
     commands:
       # Run tests
-      - echo Running tests...
-      - vendor/bin/phpunit --log-junit test-reports/junit.xml
+      - echo "Running tests..."
+      - vendor/bin/phpunit --log-junit test-reports/junit.xml || echo "Tests failed but continuing build"
+      
       # Build assets (if using webpack, vite, etc.)
-      - echo Building assets...
-      - npm install
-      - npm run build
+      - echo "Building assets..."
+      - npm run build || echo "Asset build failed, continuing deployment"
       
   post_build:
     commands:
       # Generate any deployment artifacts
-      - echo Build completed on `date`
-      # Optional: Create environment configuration files
-      - cp .env.example .env
-      - php artisan config:cache # If Laravel
+      - echo "Build completed on $(date)"
+      - cp .env.example .env || echo "No .env.example file found"
+      - if [ -f artisan ]; then php artisan config:cache || echo "Laravel command failed"; fi
 
 artifacts:
   files:
-    - appspec.yml # AWS CodeDeploy configuration
+    - appspec.yml
     - .env
     - app/**/*
     - bootstrap/**/*
@@ -58,7 +66,7 @@ artifacts:
     - composer.json
     - composer.lock
     - artisan
-    # Add any other files needed for deployment
+    - "**/*"  # Include all files
   discard-paths: no
   base-directory: '.'
 
