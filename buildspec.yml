@@ -1,51 +1,46 @@
 version: 0.2
-
 phases:
   install:
     runtime-versions:
-      nodejs: 16  # Use Node.js runtime
+      # Removed NodeJS runtime
     commands:
       # Show system information
       - echo "System Information:"
       - cat /etc/os-release
       - uname -a
-      
+     
       # Install PHP 8.0 on Amazon Linux 2023
       - echo "Installing PHP 8.0..."
       - dnf install -y php8.0 php8.0-cli php8.0-common php8.0-curl php8.0-mbstring php8.0-xml php8.0-zip php8.0-pdo php8.0-mysqlnd php8.0-gd || dnf install -y php php-cli php-common php-curl php-mbstring php-xml php-zip php-pdo php-mysqlnd php-gd
-      
+     
       # Verify PHP installation
       - php -v
-      
+     
       # Install Composer
       - echo "Installing Composer..."
       - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
       - composer --version
-      
+     
   pre_build:
     commands:
-      # Install dependencies
+      # Install dependencies - removed npm related commands
       - echo "Installing project dependencies..."
       - composer install --no-interaction --no-progress || echo "Composer install failed, continuing build"
-      - npm ci || npm install
-      
+     
   build:
     commands:
       # Run tests
       - echo "Running tests..."
       - vendor/bin/phpunit --log-junit test-reports/junit.xml || echo "Tests failed but continuing build"
-      
-      # Build assets (if using webpack, vite, etc.)
-      - echo "Building assets..."
-      - npm run build || echo "Asset build failed, continuing deployment"
-      
+     
+      # Removed asset building with npm
+     
   post_build:
     commands:
       # Generate any deployment artifacts
       - echo "Build completed on $(date)"
       - cp .env.example .env || echo "No .env.example file found"
       - if [ -f artisan ]; then php artisan config:cache || echo "Laravel command failed"; fi
-
 artifacts:
   files:
     - appspec.yml
@@ -65,12 +60,10 @@ artifacts:
     - "**/*"  # Include all files
   discard-paths: no
   base-directory: '.'
-
 cache:
   paths:
     - vendor/**/*
-    - node_modules/**/*
-
+    # Removed node_modules cache
 reports:
   phpunit-reports:
     files:
