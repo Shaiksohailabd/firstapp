@@ -1,8 +1,6 @@
 version: 0.2
 phases:
   install:
-    runtime-versions:
-      # Removed NodeJS runtime
     commands:
       # Show system information
       - echo "System Information:"
