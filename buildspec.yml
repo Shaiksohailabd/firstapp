@@ -3,16 +3,16 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 16  # Just use Node.js runtime
+      nodejs: 16  # Use Node.js runtime
     commands:
-      # Check which Linux distribution is running
-      - cat /etc/*release
+      # Show system information
+      - echo "System Information:"
+      - cat /etc/os-release
+      - uname -a
       
-      # Install PHP 8.0 on Amazon Linux 2
+      # Install PHP 8.0 on Amazon Linux 2023
       - echo "Installing PHP 8.0..."
-      - amazon-linux-extras enable php8.0
-      - yum clean metadata
-      - yum install -y php php-cli php-common php-curl php-mbstring php-xml php-zip php-mysql php-gd
+      - dnf install -y php8.0 php8.0-cli php8.0-common php8.0-curl php8.0-mbstring php8.0-xml php8.0-zip php8.0-pdo php8.0-mysqlnd php8.0-gd || dnf install -y php php-cli php-common php-curl php-mbstring php-xml php-zip php-pdo php-mysqlnd php-gd
       
       # Verify PHP installation
       - php -v
@@ -24,10 +24,6 @@ phases:
       
   pre_build:
     commands:
-      # Run any checks before build
-      - echo "Running pre-build checks..."
-      - php -v
-      
       # Install dependencies
       - echo "Installing project dependencies..."
       - composer install --no-interaction --no-progress || echo "Composer install failed, continuing build"
