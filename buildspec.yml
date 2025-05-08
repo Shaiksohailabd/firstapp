@@ -1,13 +1,63 @@
 version: 0.2
 phases:
-  install:
+  install: 
+    runtime-versions:
+      php: 8.1
     commands:
-      - echo "Installing dependencies"
-      - npm install
+      #install dependencies
+      - echo Installing composer dependencies...
+      - composer install --no-interaction --no-progress
+
+  pre_build:
+    commands:
+      #run any checks before build.
+      - echo Running pre-build checks...
+      - php -v
+      # options checks like security check and ports check
+      # -vendor /bin/security-checker security:check composer.lock
+
   build:
     commands:
-      - echo "Building the application"
-      - npm run build
+      # run tests
+      - echo Running tests..
+      - vendor/bin/phpunit --log-junit test-reports/junit.xml
+      #build assests (if using web packs, vite, etc.)
+      - echo building assets...
+      
+
+  post_build:
+    commands:
+      # genrate any deployment artifacts
+      - echo Build complete on `date`
+      # Optional: create environment configuration file
+      - cp .env.example .env
+      - php artisan config:cache #if laravel
+
 artifacts:
   files:
-    - '**/*'
+    - appspec.yml #AWS CodeDeploy Configuration
+    - .env
+    - app/**/*
+    - bootstrap/**/*
+    - config/**/*
+    - database/**/*
+    - public/**/*
+    - vendor/**/*
+    - composer.json
+    - composer.lock
+    - artisan
+
+    #add any other files needed for deployment
+  discard-paths: no
+  base-directory: '.'
+
+cache:
+  path:
+    - vendor/**/*
+    - node_modules/**/*
+
+reports:
+  phpunit-reports:
+    files:
+      - test-report/junit.xml
+    file-format: JUNITXML
