@@ -2,17 +2,20 @@ version: 0.2
 phases:
   install: 
     runtime-versions:
-      php: 8.1
+      php: 8.0
     commands:
       #install dependencies
-      - echo Installing composer dependencies...
-      - composer install --no-interaction --no-progress
+      - echo Installing composer...
+      - curl -sS https://getcomposer.org/installer | php
+      - mv composer.phar /usr/local/bin/composer
 
   pre_build:
     commands:
       #run any checks before build.
       - echo Running pre-build checks...
       - php -v
+      - echo installing PHP dependencies...
+      - composer install --no-interaction --prefer-dist --optimize-autoloader
       # options checks like security check and ports check
       # -vendor /bin/security-checker security:check composer.lock
 
