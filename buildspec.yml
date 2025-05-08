@@ -1,66 +1,74 @@
 version: 0.2
+
 phases:
-  install: 
+  install:
     runtime-versions:
       php: 8.0
+      nodejs: 16
     commands:
-      #install dependencies
-      - echo Installing composer...
-      - curl -sS https://getcomposer.org/installer | php
-      - mv composer.phar /usr/local/bin/composer
-
+      # Make setup script executable and run it
+      - chmod +x ./setup-environment.sh
+      - ./setup-environment.sh
+      
+      # Install project dependencies
+      - echo "Installing project dependencies..."
+      - composer install --no-interaction --no-progress || echo "Composer install failed, continuing build"
+      
   pre_build:
     commands:
-      #run any checks before build.
+      # Run any checks before build
       - echo Running pre-build checks...
       - php -v
-      - echo installing PHP dependencies...
-      - composer install --no-interaction --prefer-dist --optimize-autoloader
-      # options checks like security check and ports check
-      # -vendor /bin/security-checker security:check composer.lock
-
+      # Optional: Run linting or code style checks
+      # - vendor/bin/phpcs --standard=PSR12 app/
+      # Optional: Run security checks
+      # - vendor/bin/security-checker security:check composer.lock
+      
   build:
     commands:
-      # run tests
-      - echo Running tests..
+      # Run tests
+      - echo Running tests...
       - vendor/bin/phpunit --log-junit test-reports/junit.xml
-      #build assests (if using web packs, vite, etc.)
-      - echo building assets...
+      # Build assets (if using webpack, vite, etc.)
+      - echo Building assets...
+      - npm install
+      - npm run build
       
-
   post_build:
     commands:
-      # genrate any deployment artifacts
-      - echo Build complete on `date`
-      # Optional: create environment configuration file
+      # Generate any deployment artifacts
+      - echo Build completed on `date`
+      # Optional: Create environment configuration files
       - cp .env.example .env
-      - php artisan config:cache #if laravel
+      - php artisan config:cache # If Laravel
 
 artifacts:
   files:
-    - appspec.yml #AWS CodeDeploy Configuration
+    - appspec.yml # AWS CodeDeploy configuration
     - .env
     - app/**/*
     - bootstrap/**/*
     - config/**/*
     - database/**/*
     - public/**/*
+    - resources/**/*
+    - routes/**/*
+    - storage/**/*
     - vendor/**/*
     - composer.json
     - composer.lock
     - artisan
-
-    #add any other files needed for deployment
+    # Add any other files needed for deployment
   discard-paths: no
   base-directory: '.'
 
 cache:
-  path:
+  paths:
     - vendor/**/*
     - node_modules/**/*
 
 reports:
   phpunit-reports:
     files:
-      - test-report/junit.xml
+      - test-reports/junit.xml
     file-format: JUNITXML
