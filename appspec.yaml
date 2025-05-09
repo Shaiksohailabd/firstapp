@@ -1,0 +1,33 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html/php-app
+    overwrite: true
+
+permissions:
+  - object: /var/www/html/php-app
+    owner: apache
+    group: apache
+    mode: 755
+    type: directory
+  - object: /var/www/html/php-app/storage
+    owner: apache
+    group: apache
+    mode: 775
+    type: directory
+    pattern: "**"
+
+hooks:
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: scripts/after_install.sh
+      timeout: 300
+      runas: root
+  ApplicationStart:
+    - location: scripts/start_application.sh
+      timeout: 300
+      runas: root
